@@ -48,8 +48,6 @@ local Settings = {
     AutoSkipWaves = false,
     AntiAFK = false,
 
-    SpeedMode = "Normal",
-
     TargetMode = "Path Progress",
     TP_Offset = Vector3.new(0, 2, 0),
     SelectedDungeon = "Space",
@@ -62,6 +60,10 @@ local Settings = {
 }
 
 local MaxHatchConnection
+
+local AutoSkipThread = nil
+local AutoSkipRunId = 0
+local AutoSkipRunning = false
 
 local function getMaxHatchAmountObject()
     local pg = lp:FindFirstChild("PlayerGui")
@@ -307,16 +309,9 @@ local function adjustDungeonSpeed()
         physicalClick(speedBtn)
         task.wait(0.1)
 
-        if Settings.SpeedMode == "Fast" then
-            local fast = speedBtn:FindFirstChild("Fast")
-            if fast then
-                physicalClick(fast)
-            end
-        else
-            local normal = speedBtn:FindFirstChild("Normal")
-            if normal then
-                physicalClick(normal)
-            end
+        local fastChild = speedBtn:FindFirstChild("Fast")
+        if fastChild then
+            physicalClick(fastChild)
         end
     end
 end
@@ -366,19 +361,17 @@ local function isFastVisible()
 end
 
 local function runAutoSkipWaves()
-    local nextSpeedCheck = 0
+    if AutoSkipRunning then return end
+    AutoSkipRunning = true
 
-    while Settings.AutoSkipWaves do
+    while true do
+        if not Settings.AutoSkipWaves then break end
+
         local dungeon = workspace.__Main.__DungeonRuns:FindFirstChild(tostring(lp.UserId))
 
         if dungeon then
-            if not isFastVisible() then
-                local now = os.clock()
-
-                if now >= nextSpeedCheck then
-                    adjustDungeonSpeed()
-                    nextSpeedCheck = now + math.random(10, 30) / 10
-                end
+            if isFastVisible() then
+                adjustDungeonSpeed()
             else
                 clickSkipWave()
             end
@@ -386,6 +379,8 @@ local function runAutoSkipWaves()
 
         task.wait(0.05)
     end
+
+    AutoSkipRunning = false
 end
 
 local function getBestTarget(myDungeon)
@@ -637,21 +632,23 @@ local UpdatingAutoSkipUI = false
 
 local function setAutoSkip(state, fromUI)
     Settings.AutoSkipWaves = state
+    AutoSkipRunId += 1
 
     if not fromUI and AutoSkipToggle then
         UpdatingAutoSkipUI = true
-
         if AutoSkipToggle.Set then
             AutoSkipToggle:Set(state)
         elseif AutoSkipToggle.SetValue then
             AutoSkipToggle:SetValue(state)
         end
-
         UpdatingAutoSkipUI = false
     end
 
-    if state and type(runAutoSkipWaves) == "function" then
-        task.spawn(runAutoSkipWaves)
+    if state then
+        local thisRun = AutoSkipRunId
+        AutoSkipThread = task.spawn(function()
+            runAutoSkipWaves(thisRun)
+        end)
     end
 end
 
@@ -661,15 +658,6 @@ AutoSkipToggle = MainTab:CreateToggle({
     Callback = function(v)
         if UpdatingAutoSkipUI then return end
         setAutoSkip(v, true)
-    end
-})
-
-MainTab:CreateDropdown({
-    Name = "Speed Mode",
-    Options = { "Fast", "Normal" },
-    CurrentOption = "Fast",
-    Callback = function(Value)
-        Settings.SpeedMode = Value
     end
 })
 
