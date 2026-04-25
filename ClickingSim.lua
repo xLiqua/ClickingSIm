@@ -48,6 +48,8 @@ local Settings = {
     AutoSkipWaves = false,
     AntiAFK = false,
 
+    SpeedMode = "Normal",
+
     TargetMode = "Path Progress",
     TP_Offset = Vector3.new(0, 2, 0),
     SelectedDungeon = "Space",
@@ -305,9 +307,16 @@ local function adjustDungeonSpeed()
         physicalClick(speedBtn)
         task.wait(0.1)
 
-        local fastChild = speedBtn:FindFirstChild("Fast")
-        if fastChild then
-            physicalClick(fastChild)
+        if Settings.SpeedMode == "Fast" then
+            local fast = speedBtn:FindFirstChild("Fast")
+            if fast then
+                physicalClick(fast)
+            end
+        else
+            local normal = speedBtn:FindFirstChild("Normal")
+            if normal then
+                physicalClick(normal)
+            end
         end
     end
 end
@@ -652,6 +661,15 @@ AutoSkipToggle = MainTab:CreateToggle({
     Callback = function(v)
         if UpdatingAutoSkipUI then return end
         setAutoSkip(v, true)
+    end
+})
+
+MainTab:CreateDropdown({
+    Name = "Speed Mode",
+    Options = { "Fast", "Normal" },
+    CurrentOption = "Fast",
+    Callback = function(Value)
+        Settings.SpeedMode = Value
     end
 })
 
