@@ -377,7 +377,7 @@ local function runAutoSkipWaves()
             end
         end
 
-        task.wait(0.05)
+        task.wait(0.25)
     end
 
     AutoSkipRunning = false
