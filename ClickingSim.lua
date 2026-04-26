@@ -370,7 +370,7 @@ local function runAutoSkipWaves()
         local dungeon = workspace.__Main.__DungeonRuns:FindFirstChild(tostring(lp.UserId))
 
         if dungeon then
-            if not isFastVisible() then
+            if isFastVisible() then
                 adjustDungeonSpeed()
             else
                 clickSkipWave()
