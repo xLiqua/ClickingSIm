@@ -22,16 +22,6 @@ Window:SetTheme("Crimson")
 local Knit = require(ReplicatedStorage.Packages.knit)
 local EggsService = Knit.GetService("EggsService")
 
-local RollRemote = ReplicatedStorage
-    :WaitForChild("Packages")
-    :WaitForChild("_Index")
-    :WaitForChild("sleitnick_knit@1.7.0")
-    :WaitForChild("knit")
-    :WaitForChild("Services")
-    :WaitForChild("050fe8d5a6a97a361fe7d0bd")
-    :WaitForChild("1320")
-    :WaitForChild("1309e7dc948f6d25")
-
 local Settings = {
     AutoClick = false,
 
@@ -64,6 +54,33 @@ local MaxHatchConnection
 local AutoSkipThread = nil
 local AutoSkipRunId = 0
 local AutoSkipRunning = false
+
+local function findRollRemote()
+    local services = ReplicatedStorage
+        :WaitForChild("Packages")
+        :WaitForChild("_Index")
+        :WaitForChild("sleitnick_knit@1.7.0")
+        :WaitForChild("knit")
+        :WaitForChild("Services")
+
+    for _, obj in ipairs(services:GetDescendants()) do
+        if obj:IsA("RemoteFunction") then
+            local ok = pcall(function()
+                obj:InvokeServer("Dice", 1)
+            end)
+
+            if ok then
+                print("✅ Found Roll Remote:", obj:GetFullName())
+                return obj
+            end
+        end
+    end
+
+    warn("❌ RollRemote not found")
+    return nil
+end
+
+local RollRemote = findRollRemote()
 
 local function getMaxHatchAmountObject()
     local pg = lp:FindFirstChild("PlayerGui")
@@ -249,7 +266,13 @@ local function runAutoRoll()
     while Settings.AutoRoll do
         if Settings.SelectedDice and Settings.SelectedDice ~= "None" then
             pcall(function()
-                RollRemote:InvokeServer(Settings.SelectedDice, 3)
+                if not RollRemote or not RollRemote.Parent then
+                    RollRemote = findRollRemote()
+                end
+
+                if RollRemote then
+                    RollRemote:InvokeServer(Settings.SelectedDice, 3)
+                end
             end)
         end
 
